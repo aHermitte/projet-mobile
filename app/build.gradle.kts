@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.wintersection"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.wintersection"
@@ -43,4 +43,5 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation(libs.osmdroid.android)
 }
