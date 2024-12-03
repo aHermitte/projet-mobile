@@ -39,7 +39,8 @@ class RoadService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null;
 
     private fun fetchData() : String {
-        val api = "https://opendata.bordeaux-metropole.fr/api/explore/v2.1/catalog/datasets/ci_chantier/records?limit=20"
+        //val api = "https://opendata.bordeaux-metropole.fr/api/explore/v2.1/catalog/datasets/ci_chantier/records?limit=20"
+        val api = "https://opendata.bordeaux-metropole.fr/api/explore/v2.1/catalog/datasets/ci_chantier/records?select=*&where=localisation%20LIKE%20%22l%27intersection%22&limit=100"
         val req = Request.Builder().url(api).build();
         return try {
             client.newCall(req).execute().use {
@@ -56,6 +57,11 @@ class RoadService : Service() {
         val jsonObject = JSONObject(jsonString)
         val results = jsonObject.getJSONArray("results")
         val filteredResults = JSONArray();
+        val resultsMaxCount = jsonObject.getInt("total_count")
+        val resultsCount = results.length();
+
+        println("There are $resultsCount results out of $resultsMaxCount")
+        //TODO: Fetch again if resultsCount < resultsMaxCount
 
         for (i in 0 until results.length()) {
             val result = results.getJSONObject(i)
