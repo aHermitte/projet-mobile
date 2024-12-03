@@ -11,6 +11,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -23,19 +24,22 @@ import org.json.JSONObject
 
 class MainActivity : AppCompatActivity(){
     private lateinit var map: MapView
+    private var results = JSONObject()
 
     private val dataReadyReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val json = intent?.getStringExtra("results")
             if (json != null) {
                 println("Main activity received data: $json")
-                displayEvents(JSONObject(json))
+                results = JSONObject(json)
+                displayEvents(results)
             } else {
                 println("Main activity received broadcast without data : $json")
             }
 
         }
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -54,6 +58,7 @@ class MainActivity : AppCompatActivity(){
         }
 
         getRoadEvents()
+        listActivityListener()
     }
 
     private fun checkLocationPermission(): Boolean {
@@ -92,6 +97,7 @@ class MainActivity : AppCompatActivity(){
 
         map.overlays.add(marker)
     }
+
     @SuppressLint("MissingPermission")
     private fun getCurrentLocation() {
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -133,6 +139,20 @@ class MainActivity : AppCompatActivity(){
             println("Latitude: $latitude, Longitude: $longitude, Libelle: $libelle")
             addMarker(latitude, longitude, libelle)
         }
+    }
+
+    //Listener for button click to next activity
+    private fun listActivityListener(){
+        val button = findViewById<Button>(R.id.buttonnext)
+        button.setOnClickListener {
+            startListActivity()
+        }
+    }
+
+    private fun startListActivity() {
+        val intent = Intent(this, ListActivity::class.java)
+        intent.putExtra("results", results.toString())
+        startActivity(intent)
     }
 
     override fun onRequestPermissionsResult(
