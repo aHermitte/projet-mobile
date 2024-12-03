@@ -19,6 +19,9 @@ import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.overlay.Marker
 import org.json.JSONObject
+import org.osmdroid.tileprovider.tilesource.ThunderforestTileSource
+import org.osmdroid.tileprovider.tilesource.ThunderforestTileSource.TRANSPORT
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 
 class MainActivity : AppCompatActivity(){
     private lateinit var map: MapView
@@ -63,6 +66,9 @@ class MainActivity : AppCompatActivity(){
         map = findViewById(R.id.map)
         map.setMultiTouchControls(true)
         map.controller.setZoom(15.0)
+
+        val tileSource = ThunderforestTileSource(this, TRANSPORT)
+        map.setTileSource(tileSource)
 
 
         getRoadEvents()
