@@ -7,16 +7,19 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.android.gms.location.LocationServices
 import org.osmdroid.views.MapView
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.overlay.Marker
-import com.google.android.gms.location.LocationServices
 import org.json.JSONObject
 
 class MainActivity : AppCompatActivity(){
@@ -80,6 +83,18 @@ class MainActivity : AppCompatActivity(){
         marker.title = title
 
         //TODO: Make different icons for user location and road events
+        val drawable = if (isUserLocation) {
+            resources.getDrawable(R.drawable.pin)
+        } else {
+            resources.getDrawable(R.drawable.pin)
+        }
+
+        val bitmap = (drawable as BitmapDrawable).bitmap
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 30, 30, false)
+
+        val scaledDrawable = BitmapDrawable(resources, scaledBitmap)
+        marker.icon = scaledDrawable
+
         map.overlays.add(marker)
     }
 
