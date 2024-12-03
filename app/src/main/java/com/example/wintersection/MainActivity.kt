@@ -32,12 +32,44 @@ class MainActivity : AppCompatActivity(){
             if (json != null) {
                 println("Main activity received data: $json")
                 results = JSONObject(json)
-                displayEvents(results)
+                displayEvents()
             } else {
                 println("Main activity received broadcast without data : $json")
             }
 
         }
+    }
+
+    private val locationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent != null && intent.action == "com.example.wintersection.LOCATION_UPDATE") {
+                val latitude = intent.getDoubleExtra("latitude", 0.0)
+                val longitude = intent.getDoubleExtra("longitude", 0.0)
+
+                // Handle the received location data
+                println("Received location update: Latitude=$latitude, Longitude=$longitude")
+
+                // You can update the UI or perform other actions with the location
+                // Example: Display the location on a map
+                updateMapLocation(latitude, longitude)
+            }
+        }
+    }
+
+    private fun updateMapLocation(latitude: Double, longitude: Double) {
+        // Assuming you have a map object (e.g., OpenStreetMap or Google Maps)
+        val newLocation = GeoPoint(latitude, longitude)
+        map.controller.setCenter(newLocation)
+        map.controller.setZoom(15.0)
+
+        // Optionally, add a marker
+        val marker = Marker(map)
+        marker.position = newLocation
+        marker.title = "Current Location"
+        map.overlays.clear()
+        map.overlays.add(marker)
+        displayEvents()
+
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,14 +83,15 @@ class MainActivity : AppCompatActivity(){
         map = findViewById(R.id.map)
         map.setMultiTouchControls(true)
 
-        if (checkLocationPermission()) {
-            getCurrentLocation()
-        } else {
-            requestLocationPermission()
-        }
 
         getRoadEvents()
         listActivityListener()
+        if (checkLocationPermission()) {
+            getCurrentLocation()
+            startPositionListener()
+        } else {
+            requestLocationPermission()
+        }
     }
 
     private fun checkLocationPermission(): Boolean {
@@ -129,8 +162,18 @@ class MainActivity : AppCompatActivity(){
         startService(serviceIntent)
     }
 
-    private fun displayEvents(res : JSONObject) {
-        val results = res.getJSONArray("results")
+    private fun startPositionListener() {
+        val intertFilter = IntentFilter("com.example.wintersection.LOCATION_UPDATE")
+        val serviceIntent = Intent(this, LocationService::class.java)
+        startService(serviceIntent)
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            locationReceiver,
+            IntentFilter("com.example.wintersection.LOCATION_UPDATE")
+        )
+    }
+
+    private fun displayEvents() {
+        val results = results.getJSONArray("results")
         for (i in 0 until results.length()) {
             val result = results.getJSONObject(i)
             val latitude = result.getDouble("latitude")
