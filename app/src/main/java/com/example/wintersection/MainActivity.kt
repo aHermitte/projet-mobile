@@ -2,20 +2,38 @@ package com.example.wintersection
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.osmdroid.views.MapView
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.overlay.Marker
 import com.google.android.gms.location.LocationServices
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity(){
     private lateinit var map: MapView
 
+    private val dataReadyReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val json = intent?.getStringExtra("results")
+            if (json != null) {
+                println("Main activity received data: $json")
+                displayEvents(JSONObject(json))
+            } else {
+                println("Main activity received broadcast without data : $json")
+            }
+
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -51,6 +69,15 @@ class MainActivity : AppCompatActivity(){
         )
     }
 
+    private fun addMarker(latitude: Double, longitude: Double, title: String, isUserLocation: Boolean = false) {
+        val marker = Marker(map)
+        marker.position = GeoPoint(latitude, longitude)
+        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        marker.title = title
+
+        //TODO: Make different icons for user location and road events
+        map.overlays.add(marker)
+    }
     @SuppressLint("MissingPermission")
     private fun getCurrentLocation() {
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -74,9 +101,24 @@ class MainActivity : AppCompatActivity(){
     }
 
     private fun getRoadEvents() {
-       //TODO: Start service to make API calls to Bordeaux OpenDATA
+        //Register receiver
+        val intentFilter = IntentFilter("com.example.wintersection.DATA_READY")
+        LocalBroadcastManager.getInstance(this).registerReceiver(dataReadyReceiver, intentFilter)
+
         val serviceIntent = Intent(this, RoadService::class.java)
         startService(serviceIntent)
+    }
+
+    private fun displayEvents(res : JSONObject) {
+        val results = res.getJSONArray("results")
+        for (i in 0 until results.length()) {
+            val result = results.getJSONObject(i)
+            val latitude = result.getDouble("latitude")
+            val longitude = result.getDouble("longitude")
+            val libelle = result.getString("libelle")
+            println("Latitude: $latitude, Longitude: $longitude, Libelle: $libelle")
+            addMarker(latitude, longitude, libelle)
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -106,5 +148,10 @@ class MainActivity : AppCompatActivity(){
     override fun onPause() {
         super.onPause()
         map.onPause()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(dataReadyReceiver)
     }
 }
