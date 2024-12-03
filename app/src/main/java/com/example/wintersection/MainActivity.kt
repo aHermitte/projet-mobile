@@ -2,6 +2,7 @@ package com.example.wintersection
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -32,18 +33,7 @@ class MainActivity : AppCompatActivity(){
             requestLocationPermission()
         }
 
-        // TODO: Replace default location with actual phone position
-        val mapController = map.controller
-        mapController.setZoom(15.0)
-        val startPoint = GeoPoint(48.8566, 2.3522)
-        mapController.setCenter(startPoint)
-
-        // TODO: Replace with actual alerts on intersections
-        val marker = Marker(map)
-        marker.position = startPoint
-        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-        marker.title = "Marker in Paris"
-        map.overlays.add(marker)
+        getRoadEvents()
     }
 
     private fun checkLocationPermission(): Boolean {
@@ -81,6 +71,12 @@ class MainActivity : AppCompatActivity(){
             // Handle failure
             it.printStackTrace()
         }
+    }
+
+    private fun getRoadEvents() {
+       //TODO: Start service to make API calls to Bordeaux OpenDATA
+        val serviceIntent = Intent(this, RoadService::class.java)
+        startService(serviceIntent)
     }
 
     override fun onRequestPermissionsResult(
