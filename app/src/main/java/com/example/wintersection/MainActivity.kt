@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.osmdroid.views.MapView
 import org.osmdroid.config.Configuration
@@ -61,6 +62,7 @@ class MainActivity : AppCompatActivity(){
         // Initialize the map
         map = findViewById(R.id.map)
         map.setMultiTouchControls(true)
+        map.controller.setZoom(15.0)
 
 
         getRoadEvents()
@@ -76,16 +78,12 @@ class MainActivity : AppCompatActivity(){
     private fun updateMapLocation(latitude: Double, longitude: Double) {
         val newLocation = GeoPoint(latitude, longitude)
         map.controller.setCenter(newLocation)
-        map.controller.setZoom(15.0)
 
-        val marker = Marker(map)
-        marker.position = newLocation
-        marker.title = "Current Location"
-        if (this::userPos.isInitialized ) {
+        if (this::userPos.isInitialized) {
             map.overlays.remove(userPos)
         }
-        userPos = marker
-        map.overlays.add(userPos)
+
+        userPos = addMarker(latitude, longitude, "Current Location", true)
     }
 
     private fun displayEvents() {
@@ -99,25 +97,29 @@ class MainActivity : AppCompatActivity(){
             addMarker(latitude, longitude, libelle)
         }
     }
-    private fun addMarker(latitude: Double, longitude: Double, title: String, isUserLocation: Boolean = false) {
+
+    private fun addMarker(latitude: Double, longitude: Double, title: String, isUserLocation: Boolean = false) : Marker {
         val marker = Marker(map)
         marker.position = GeoPoint(latitude, longitude)
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         marker.title = title
 
-        val drawable = if (isUserLocation) {
-            resources.getDrawable(R.drawable.pin)
+        if (isUserLocation) {
+            setMarkerIcon(marker, R.drawable.bluepin)
         } else {
-            resources.getDrawable(R.drawable.pin)
+            setMarkerIcon(marker, R.drawable.redpin)
         }
 
+        map.overlays.add(marker)
+        return marker
+    }
+
+    private fun setMarkerIcon(marker: Marker, iconResId: Int) {
+        val drawable = ContextCompat.getDrawable(this, iconResId)
         val bitmap = (drawable as BitmapDrawable).bitmap
         val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 30, 30, false)
-
         val scaledDrawable = BitmapDrawable(resources, scaledBitmap)
         marker.icon = scaledDrawable
-
-        map.overlays.add(marker)
     }
 
     private fun checkLocationPermission(): Boolean {

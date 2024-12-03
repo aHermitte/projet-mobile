@@ -28,9 +28,9 @@
         <activity android:name=".ListActivity"
             android:exported="false"/>
         <service android:name=".RoadService"
-            android:exported="true" />
+            android:exported="false" />
         <service android:name=".LocationService"
-            android:exported="true" />
+            android:exported="false" />
     </application>
 
 </manifest>
