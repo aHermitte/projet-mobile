@@ -26,6 +26,9 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 class MainActivity : AppCompatActivity(){
     private lateinit var map: MapView
     private lateinit var userPos: Marker
+    private var userLat: Double = 0.0
+    private var userLong: Double = 0.0
+
     private var results = JSONObject()
 
     private val dataReadyReceiver = object : BroadcastReceiver() {
@@ -47,6 +50,8 @@ class MainActivity : AppCompatActivity(){
             if (intent != null && intent.action == "com.example.wintersection.LOCATION_UPDATE") {
                 val latitude = intent.getDoubleExtra("latitude", 0.0)
                 val longitude = intent.getDoubleExtra("longitude", 0.0)
+                userLat = latitude
+                userLong = longitude
 
                 println("Received location update: Latitude=$latitude, Longitude=$longitude")
 
@@ -172,6 +177,8 @@ class MainActivity : AppCompatActivity(){
     private fun startListActivity() {
         val intent = Intent(this, ListActivity::class.java)
         intent.putExtra("results", results.toString())
+        intent.putExtra("userLat", userLat)
+        intent.putExtra("userLong", userLong)
         startActivity(intent)
     }
 
