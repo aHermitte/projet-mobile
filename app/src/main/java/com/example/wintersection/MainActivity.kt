@@ -10,6 +10,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.MotionEvent
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -97,8 +98,8 @@ class MainActivity : AppCompatActivity() {
             map.overlays.remove(userPos)
         }
 
-        userPos = addMarker(latitude, longitude, "Current Location", true)
         addCircleAroundUser(newLocation)
+        userPos = addMarker(latitude, longitude, "Current Location", true)
         recheckEventProximity()
     }
 
@@ -171,7 +172,15 @@ class MainActivity : AppCompatActivity() {
         map.overlays.removeIf { it is Polygon && it.title == "User Location Circle" }
 
         // Create a new circle
-        val circle = Polygon()
+        val circle =object: Polygon() {
+            override fun onSingleTapConfirmed(pEvent: MotionEvent?, pMapView: MapView?): Boolean {
+                return false
+            }
+            override fun onLongPress(pEvent: MotionEvent?, pMapView: MapView?): Boolean {
+                return false
+            }
+
+        }
         circle.points = Polygon.pointsAsCircle(location, circleRadiusInMeters)
         circle.fillColor = 0x220000FF
         circle.strokeColor = 0xFF0000FF.toInt()
