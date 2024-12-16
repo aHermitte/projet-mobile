@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import org.json.JSONException
 import org.json.JSONObject
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
@@ -32,6 +33,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var userPos: Marker
     private var userLat: Double = 0.0
     private var userLong: Double = 0.0
+    private val REQUEST_CODE_IMPORT_JSON = 1001
 
     private var results = JSONObject()
     private val circleRadiusInMeters = 500.0
@@ -107,10 +109,24 @@ class MainActivity : AppCompatActivity() {
 
         getRoadEvents()
         listActivityListener()
+        setupFloatingActionButton()
         if (checkLocationPermission()) {
             startPositionListener()
         } else {
             requestLocationPermission()
+        }
+    }
+
+
+    private fun setupFloatingActionButton() {
+        val importButton = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.floatingActionButton2)
+        importButton.setOnClickListener {
+            // Open the file picker for JSON files
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "application/json"
+            }
+            startActivityForResult(intent, REQUEST_CODE_IMPORT_JSON)
         }
     }
 
@@ -125,6 +141,54 @@ class MainActivity : AppCompatActivity() {
         addCircleAroundUser(newLocation)
         userPos = addMarker(latitude, longitude, "Current Location", true)
         recheckEventProximity()
+    }
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE_IMPORT_JSON && resultCode == RESULT_OK) {
+            val uri = data?.data
+            if (uri != null) {
+                try {
+                    val jsonString = contentResolver.openInputStream(uri)?.bufferedReader().use { it?.readText() }
+                    if (jsonString != null) {
+                        importJsonToDatabase(jsonString)
+                    } else {
+                        Toast.makeText(this, "Failed to read file", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "Error reading JSON file: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun importJsonToDatabase(jsonString: String) {
+        try {
+            val jsonObject = JSONObject(jsonString)
+            if (jsonObject.has("results")) {
+                val resultsArray = jsonObject.getJSONArray("results")
+                val dbManager = DatabaseManager(this)
+
+                for (i in 0 until resultsArray.length()) {
+                    val result = resultsArray.getJSONObject(i)
+                    val latitude = result.getDouble("latitude")
+                    val longitude = result.getDouble("longitude")
+                    val libelle = result.getString("libelle")
+
+                    // Insert into the database
+                    dbManager.insertIntersection(latitude, longitude, libelle)
+                }
+
+                Toast.makeText(this, "JSON imported successfully!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Invalid JSON format: Missing 'results' key", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            Toast.makeText(this, "Error parsing JSON: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun displayEvents() {
