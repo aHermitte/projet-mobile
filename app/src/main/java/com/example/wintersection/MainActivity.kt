@@ -44,11 +44,35 @@ class MainActivity : AppCompatActivity() {
             if (json != null) {
                 println("Main activity received data: $json")
                 results = JSONObject(json)
+
+                val dbManager = DatabaseManager(this@MainActivity)
+                saveResultsToDatabase(dbManager)
                 displayEvents()
             } else {
                 println("Main activity received broadcast without data : $json")
             }
         }
+    }
+
+    private fun saveResultsToDatabase(dbManager: DatabaseManager) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                200
+            )
+        }
+        val resultsArray = results.getJSONArray("results")
+        for (i in 0 until resultsArray.length()) {
+            val result = resultsArray.getJSONObject(i)
+            val latitude = result.getDouble("latitude")
+            val longitude = result.getDouble("longitude")
+            val libelle = result.getString("libelle")
+
+            // Save each intersection to the database
+            dbManager.insertIntersection(latitude, longitude, libelle)
+        }
+        println("All fetched intersections have been stored in the database.")
     }
 
     private val locationReceiver = object : BroadcastReceiver() {
@@ -191,6 +215,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun recheckEventProximity() {
+        if(results.length() == 0) return
         val results = results.getJSONArray("results")
         for (i in 0 until results.length()) {
             val result = results.getJSONObject(i)
@@ -217,12 +242,43 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getRoadEvents() {
+        val dbManager = DatabaseManager(this)
+        val lastFetchTimestamp = dbManager.getMetadata("last_fetch_time")
+
+        val currentTimeMillis = System.currentTimeMillis()
+        if (lastFetchTimestamp != null) {
+            val lastFetchTime = lastFetchTimestamp.toLong()
+            if (currentTimeMillis - lastFetchTime < TimeUnit.DAYS.toMillis(1)) {
+                // Load data from the database
+                loadIntersectionsFromDatabase(dbManager)
+                return
+            }
+        }
+
+        // Otherwise, fetch new data
         val intentFilter = IntentFilter("com.example.wintersection.DATA_READY")
         LocalBroadcastManager.getInstance(this).registerReceiver(dataReadyReceiver, intentFilter)
 
         val serviceIntent = Intent(this, RoadService::class.java)
         startService(serviceIntent)
+
+        // Save the current fetch timestamp
+        dbManager.saveMetadata("last_fetch_time", currentTimeMillis.toString())
     }
+
+    private fun loadIntersectionsFromDatabase(dbManager: DatabaseManager) {
+        println("Reading from Database")
+        val intersections = dbManager.getAllIntersections()
+        intersections.forEach {
+            val latitude = it["latitude"] as Double
+            val longitude = it["longitude"] as Double
+            val libelle = it["libelle"] as String
+            addMarker(latitude, longitude, libelle)
+            checkEventProximity(GeoPoint(latitude, longitude), libelle)
+        }
+    }
+
+
 
     private fun startPositionListener() {
         val serviceIntent = Intent(this, LocationService::class.java)
