@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import org.osmdroid.config.Configuration
@@ -339,6 +340,19 @@ class MainActivity : AppCompatActivity() {
             val libelle = it["libelle"] as String
             addMarker(latitude, longitude, libelle)
             checkEventProximity(GeoPoint(latitude, longitude), libelle)
+        }
+        val newResultsArray = JSONArray()
+        for (intersection in intersections) {
+            val resultEntry = JSONObject().apply {
+                put("latitude", intersection["latitude"])
+                put("longitude", intersection["longitude"])
+                put("libelle", intersection["libelle"])
+            }
+            newResultsArray.put(resultEntry)
+        }
+
+        results = JSONObject().apply {
+            put("results", newResultsArray)
         }
     }
 
