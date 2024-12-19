@@ -41,6 +41,9 @@ class MainActivity : AppCompatActivity() {
     private val eventAlertTimestamps = mutableMapOf<String, Long>()
     private val alertCooldownMillis = TimeUnit.MINUTES.toMillis(5)
 
+    private var isCameraManuallyMoved = false
+    private var centerPt = GeoPoint(48.8566, 2.3522)
+
     private val dataReadyReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val json = intent?.getStringExtra("results")
@@ -118,6 +121,68 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent?) {
+       super.onNewIntent(intent)
+
+       val lat = intent?.getDoubleExtra("selectedLatitude", 0.0);
+        val lon = intent?.getDoubleExtra("selectedLongitude", 0.0);
+        val lib = intent?.getStringExtra("selectedLibelle");
+
+        println("Back to main activity, lat: $lat, lon: $lon, lib: $lib")
+
+        // Check if it corresponds to an existing intersection warning
+
+        if (lat != null && lon != null && lib != null) {
+            focusOnIntersection(lat, lon, lib)
+        };
+
+    }
+
+   // private fun focusOnIntersection(lat: Double, lon: Double, lib: String) {
+   //     val newLocation = GeoPoint(lat, lon)
+   //     centerPt = newLocation
+   //     isCameraManuallyMoved = true
+   // }
+
+    private fun focusOnIntersection(lat: Double, lon: Double, lib: String) {
+        val newLocation = GeoPoint(lat, lon)
+        centerPt = newLocation
+        isCameraManuallyMoved = true
+
+        // Set the map center to the new location
+        map.controller.setCenter(centerPt)
+
+        // Find the marker closest to the center of the map
+        val centerGeoPoint = map.boundingBox.center
+        val closestMarker = findClosestMarker(centerGeoPoint)
+
+        // If a closest marker is found, display its title
+        closestMarker?.showInfoWindow()
+        //closestMarker?.let {
+        //    Toast.makeText(this, "Closest marker: ${it.title}", Toast.LENGTH_SHORT).show()
+        //}
+    }
+
+    private fun findClosestMarker(center: GeoPoint): Marker? {
+        var closestMarker: Marker? = null
+        var minDistance = Double.MAX_VALUE
+
+        // Loop through the map's overlays (which should contain the markers)
+        for (overlay in map.overlays) {
+            if (overlay is Marker) {
+                val marker = overlay as Marker
+                val distance = center.distanceToAsDouble(marker.position)
+
+                if (distance < minDistance) {
+                    minDistance = distance
+                    closestMarker = marker
+                }
+            }
+        }
+
+        return closestMarker
+    }
+
 
     private fun setupFloatingActionButton() {
         val importButton = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.floatingActionButton2)
@@ -133,7 +198,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateMapLocation(latitude: Double, longitude: Double) {
         val newLocation = GeoPoint(latitude, longitude)
-        map.controller.setCenter(newLocation)
+        if (!isCameraManuallyMoved) {
+            centerPt = newLocation
+            map.controller.setCenter(centerPt)
+        }
 
         if (this::userPos.isInitialized) {
             map.overlays.remove(userPos)

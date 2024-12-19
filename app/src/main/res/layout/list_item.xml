@@ -1,0 +1,37 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:orientation="vertical"
+android:padding="16dp"
+android:background="?android:attr/selectableItemBackground">
+
+<!-- Title of the incident -->
+<TextView
+    android:id="@+id/incidentTitle"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Title"
+    android:textSize="18sp"
+    android:textColor="#000000"
+    android:layout_marginBottom="8dp"/>
+
+<!-- Distance of the incident -->
+<TextView
+    android:id="@+id/incidentDistance"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Distance"
+    android:textSize="14sp"
+    android:textColor="#757575"
+    android:layout_marginBottom="8dp"/>
+
+<!-- Quick description of the incident -->
+<TextView
+    android:id="@+id/incidentDescription"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Description"
+    android:textSize="12sp"
+    android:textColor="#757575"/>
+
+</LinearLayout>
