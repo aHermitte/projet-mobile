@@ -114,6 +114,8 @@ class MainActivity : AppCompatActivity() {
         getRoadEvents()
         listActivityListener()
         setupFloatingActionButton()
+        centerCameraOnUserButton()
+
         if (checkLocationPermission()) {
             startPositionListener()
         } else {
@@ -436,9 +438,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun listActivityListener() {
-        val button = findViewById<Button>(R.id.buttonnext)
+        val button = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.buttonnext)
         button.setOnClickListener {
             startListActivity()
+        }
+    }
+
+    private fun centerCameraOnUserButton() {
+        val button = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.floatingActionButton1)
+        button.setOnClickListener {
+            isCameraManuallyMoved = false
+            centerPt = userPos.position
+            map.controller.setCenter(centerPt)
         }
     }
 
