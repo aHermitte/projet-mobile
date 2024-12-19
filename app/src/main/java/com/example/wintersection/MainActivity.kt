@@ -11,7 +11,6 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.MotionEvent
-import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -41,7 +40,7 @@ class MainActivity : AppCompatActivity() {
     private val eventAlertTimestamps = mutableMapOf<String, Long>()
     private val alertCooldownMillis = TimeUnit.MINUTES.toMillis(5)
 
-    private var isCameraManuallyMoved = false
+    private var isCameraUnlocked = false
     private var centerPt = GeoPoint(48.8566, 2.3522)
 
     private val dataReadyReceiver = object : BroadcastReceiver() {
@@ -140,29 +139,19 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-   // private fun focusOnIntersection(lat: Double, lon: Double, lib: String) {
-   //     val newLocation = GeoPoint(lat, lon)
-   //     centerPt = newLocation
-   //     isCameraManuallyMoved = true
-   // }
-
     private fun focusOnIntersection(lat: Double, lon: Double, lib: String) {
         val newLocation = GeoPoint(lat, lon)
         centerPt = newLocation
-        isCameraManuallyMoved = true
+        isCameraUnlocked = true
 
         // Set the map center to the new location
         map.controller.setCenter(centerPt)
 
-        // Find the marker closest to the center of the map
+        // Find the marker closest to the center of the map and display
         val centerGeoPoint = map.boundingBox.center
         val closestMarker = findClosestMarker(centerGeoPoint)
 
-        // If a closest marker is found, display its title
         closestMarker?.showInfoWindow()
-        //closestMarker?.let {
-        //    Toast.makeText(this, "Closest marker: ${it.title}", Toast.LENGTH_SHORT).show()
-        //}
     }
 
     private fun findClosestMarker(center: GeoPoint): Marker? {
@@ -200,7 +189,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateMapLocation(latitude: Double, longitude: Double) {
         val newLocation = GeoPoint(latitude, longitude)
-        if (!isCameraManuallyMoved) {
+        if (!isCameraUnlocked) {
             centerPt = newLocation
             map.controller.setCenter(centerPt)
         }
@@ -313,6 +302,13 @@ class MainActivity : AppCompatActivity() {
         } else {
             setMarkerIcon(marker, R.drawable.redpin)
             marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            marker.setOnMarkerClickListener { clickedMarker, _ ->
+                isCameraUnlocked = true
+                centerPt = clickedMarker.position
+                map.controller.setCenter(centerPt)
+                clickedMarker.showInfoWindow()
+                true  // Return true to indicate that the event is handled
+            }
         }
 
         map.overlays.add(marker)
@@ -447,7 +443,7 @@ class MainActivity : AppCompatActivity() {
     private fun centerCameraOnUserButton() {
         val button = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.floatingActionButton1)
         button.setOnClickListener {
-            isCameraManuallyMoved = false
+            isCameraUnlocked = false
             centerPt = userPos.position
             map.controller.setCenter(centerPt)
         }
