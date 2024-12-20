@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
     private val alertCooldownMillis = TimeUnit.MINUTES.toMillis(5)
 
     private var isCameraUnlocked = false
-    private var centerPt = GeoPoint(48.8566, 2.3522)
+    private var centerPt = GeoPoint(userLat, userLong)
 
     private val dataReadyReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -125,9 +125,9 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent?) {
        super.onNewIntent(intent)
 
-       val lat = intent?.getDoubleExtra("selectedLatitude", 0.0);
-        val lon = intent?.getDoubleExtra("selectedLongitude", 0.0);
-        val lib = intent?.getStringExtra("selectedLibelle");
+       val lat = intent?.getDoubleExtra("selectedLatitude", 0.0)
+        val lon = intent?.getDoubleExtra("selectedLongitude", 0.0)
+        val lib = intent?.getStringExtra("selectedLibelle")
 
         println("Back to main activity, lat: $lat, lon: $lon, lib: $lib")
 
@@ -135,7 +135,7 @@ class MainActivity : AppCompatActivity() {
 
         if (lat != null && lon != null && lib != null) {
             focusOnIntersection(lat, lon, lib)
-        };
+        }
 
     }
 
@@ -161,7 +161,7 @@ class MainActivity : AppCompatActivity() {
         // Loop through the map's overlays (which should contain the markers)
         for (overlay in map.overlays) {
             if (overlay is Marker) {
-                val marker = overlay as Marker
+                val marker = overlay
                 val distance = center.distanceToAsDouble(marker.position)
 
                 if (distance < minDistance) {

@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.atan2
@@ -18,10 +19,11 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 class ListActivity : AppCompatActivity() {
-    private var incidents = JSONArray();
-    private var userLat = 0.0;
-    private var userLong = 0.0;
+    private var incidents = JSONArray()
+    private var userLat = 0.0
+    private var userLong = 0.0
     private var incidentsList = mutableListOf<JSONObject>()
+    private var sortyByNameOverDist = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +37,7 @@ class ListActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_list)
         createIncidentList()
+        setupSortBtn()
     }
 
     private fun createIncidentList() {
@@ -49,14 +52,17 @@ class ListActivity : AppCompatActivity() {
             obj.put("longitude", incident.getDouble("longitude"))
             incidentsList.add(obj)
         }
-
         displayIncidents()
     }
 
     private fun displayIncidents() {
         val listView = findViewById<ListView>(R.id.incidentListView)
 
-        incidentsList.sortBy { it.getDouble("distance") }
+        if (sortyByNameOverDist) {
+            incidentsList.sortBy { it.getString("description") }
+        } else {
+            incidentsList.sortBy { it.getDouble("distance") }
+        }
 
         val adapter = object : ArrayAdapter<JSONObject>(this, R.layout.list_item, incidentsList) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
@@ -93,6 +99,14 @@ class ListActivity : AppCompatActivity() {
             }
             startActivity(intent)
             finish() // Close ListActivity
+        }
+    }
+
+       private fun setupSortBtn() {
+        val sortButton = findViewById<FloatingActionButton>(R.id.buttonsort)
+        sortButton.setOnClickListener {
+            sortyByNameOverDist = !sortyByNameOverDist
+            displayIncidents()
         }
     }
 
